@@ -1,0 +1,399 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>OC. RELOJES.RD - Otto Collado | Estilo. Calidad. Confianza.</title>
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background-image: linear-gradient(rgba(0, 0, 0, 0.75), rgba(0, 0, 0, 0.85)), 
+                              url('https://images.unsplash.com/photo-1523170335258-f5ed11844a49?w=1920&q=80');
+            background-size: cover; background-position: center; background-attachment: fixed;
+            min-height: 100vh; padding: 20px; color: white;
+        }
+        .container { max-width: 1200px; margin: 0 auto; }
+        header {
+            text-align: center; margin-bottom: 40px; padding: 30px 20px;
+            background: linear-gradient(135deg, rgba(212, 175, 55, 0.15), rgba(0, 0, 0, 0.6));
+            border-radius: 20px; border: 1px solid rgba(212, 175, 55, 0.3); backdrop-filter: blur(10px);
+        }
+        header h1 {
+            font-size: 3.5em; background: linear-gradient(135deg, #d4af37, #f4e5a1, #d4af37);
+            -webkit-background-clip: text; -webkit-text-fill-color: transparent;
+            margin-bottom: 10px; font-family: 'Georgia', serif; letter-spacing: 2px;
+        }
+        header .subtitle { font-size: 1.1em; color: #d4af37; letter-spacing: 4px; text-transform: uppercase; margin-bottom: 15px; }
+        header p { font-size: 1.1em; opacity: 0.9; color: #f0f0f0; }
+        .admin-btn {
+            position: fixed; top: 20px; right: 20px; background: rgba(212, 175, 55, 0.2);
+            color: #d4af37; border: 2px solid #d4af37; padding: 10px 20px; border-radius: 25px;
+            cursor: pointer; font-size: 14px; transition: all 0.3s; z-index: 100; backdrop-filter: blur(10px);
+        }
+        .admin-btn:hover { background: #d4af37; color: #000; }
+        .products-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(260px, 1fr)); gap: 25px; margin-top: 30px; }
+        .product-card {
+            background: rgba(255, 255, 255, 0.95); border-radius: 15px; overflow: hidden;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.5); transition: transform 0.3s, box-shadow 0.3s;
+            cursor: pointer; border: 2px solid transparent;
+        }
+        .product-card:hover { transform: translateY(-8px); box-shadow: 0 15px 40px rgba(212, 175, 55, 0.4); border-color: #d4af37; }
+        .product-image-container { width: 100%; height: 220px; overflow: hidden; background: #f0f0f0; position: relative; }
+        .product-image { width: 100%; height: 100%; object-fit: cover; transition: transform 0.5s ease; cursor: pointer; }
+        .product-card:hover .product-image { transform: scale(1.25); }
+        .zoom-hint {
+            position: absolute; bottom: 10px; right: 10px; background: rgba(0, 0, 0, 0.7);
+            color: white; padding: 5px 10px; border-radius: 15px; font-size: 12px;
+            opacity: 0; transition: opacity 0.3s; pointer-events: none;
+        }
+        .product-card:hover .zoom-hint { opacity: 1; }
+        .product-info { padding: 18px; color: #333; }
+        .product-name { font-size: 1.15em; font-weight: bold; color: #222; margin-bottom: 8px; font-family: 'Georgia', serif; }
+        .product-price { font-size: 1.6em; color: #b8860b; font-weight: bold; margin-bottom: 15px; }
+        .whatsapp-btn {
+            background: linear-gradient(135deg, #25D366, #128C7E); color: white; border: none;
+            padding: 12px 20px; border-radius: 25px; font-size: 15px; cursor: pointer; width: 100%;
+            transition: all 0.3s; display: flex; align-items: center; justify-content: center; gap: 10px; font-weight: bold;
+        }
+        .whatsapp-btn:hover { background: linear-gradient(135deg, #128C7E, #075E54); transform: scale(1.02); }
+        .preview-modal, .modal {
+            display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+            background: rgba(0, 0, 0, 0.85); z-index: 2000; overflow-y: auto; padding: 20px;
+        }
+        .preview-content, .modal-content {
+            background: white; margin: 30px auto; max-width: 500px; border-radius: 20px;
+            overflow: hidden; position: relative; box-shadow: 0 20px 60px rgba(212, 175, 55, 0.5); padding: 30px; color: #333;
+        }
+        .preview-image { width: 100%; height: 350px; object-fit: cover; border-radius: 10px; }
+        .preview-info { padding: 25px; text-align: center; }
+        .preview-info h2 { font-family: 'Georgia', serif; color: #222; margin-bottom: 10px; }
+        .preview-info .price { font-size: 2em; color: #b8860b; font-weight: bold; margin-bottom: 20px; }
+        .preview-close, .close {
+            position: absolute; top: 15px; right: 15px; background: rgba(0, 0, 0, 0.7);
+            color: white; border: none; width: 40px; height: 40px; border-radius: 50%;
+            font-size: 24px; cursor: pointer; display: flex; align-items: center; justify-content: center;
+        }
+        .close { top: 20px; right: 20px; background: transparent; color: #999; width: auto; height: auto; font-size: 30px; }
+        .form-group { margin-bottom: 20px; }
+        .form-group label { display: block; margin-bottom: 8px; font-weight: bold; color: #333; }
+        .form-group input { width: 100%; padding: 12px; border: 2px solid #ddd; border-radius: 8px; font-size: 16px; }
+        .form-group input:focus { outline: none; border-color: #d4af37; }
+        .btn-primary {
+            background: linear-gradient(135deg, #d4af37, #b8860b); color: white; border: none;
+            padding: 12px 30px; border-radius: 25px; font-size: 16px; cursor: pointer; width: 100%;
+            transition: all 0.3s; font-weight: bold;
+        }
+        .btn-primary:hover { background: linear-gradient(135deg, #b8860b, #8b6914); transform: scale(1.02); }
+        .btn-primary:disabled { opacity: 0.6; cursor: not-allowed; }
+        .admin-products { margin-top: 30px; }
+        .admin-product-item { display: flex; gap: 15px; padding: 15px; border: 2px solid #ddd; border-radius: 10px; margin-bottom: 15px; align-items: center; }
+        .admin-product-item img { width: 80px; height: 80px; object-fit: cover; border-radius: 8px; }
+        .admin-product-info { flex: 1; }
+        .btn-delete { background: #e74c3c; color: white; border: none; padding: 8px 15px; border-radius: 5px; cursor: pointer; }
+        .no-products, .loading { text-align: center; padding: 50px; background: rgba(0, 0, 0, 0.5); border-radius: 15px; border: 2px dashed #d4af37; font-size: 1.5em; color: #d4af37; }
+        footer { text-align: center; margin-top: 50px; padding: 20px; color: #d4af37; font-size: 14px; border-top: 1px solid rgba(212, 175, 55, 0.3); }
+        @media (max-width: 768px) {
+            header h1 { font-size: 2.2em; }
+            .products-grid { grid-template-columns: repeat(auto-fill, minmax(220px, 1fr)); gap: 15px; }
+            .product-image-container { height: 180px; }
+        }
+    </style>
+</head>
+<body>
+    <button class="admin-btn" onclick="openAdminLogin()">⚙️ Admin</button>
+
+    <div class="container">
+        <header>
+            <h1>⌚ OC. RELOJES.RD</h1>
+            <div class="subtitle">Estilo · Calidad · Confianza</div>
+            <p>Los mejores relojes al mejor precio | Envíos a todos lados 🚚</p>
+        </header>
+
+        <div id="loadingMessage" class="loading">⏳ Cargando productos...</div>
+        <div id="productsContainer" class="products-grid" style="display: none;"></div>
+        <div id="noProducts" class="no-products" style="display: none;">
+            <p>🕐 No hay productos disponibles en este momento.</p>
+        </div>
+
+        <footer>
+            <p>📱 849-564-5495 | @oc.relojes.rd | 📍 Santo Domingo, Oeste</p>
+            <p style="margin-top: 10px;">© 2026 OC. RELOJES.RD - Otto Collado. Todos los derechos reservados.</p>
+        </footer>
+    </div>
+
+    <!-- Modal de Vista Previa -->
+    <div id="previewModal" class="preview-modal">
+        <div class="preview-content">
+            <button class="preview-close" onclick="closeModal('previewModal')">&times;</button>
+            <img id="previewImage" src="" alt="Reloj" class="preview-image">
+            <div class="preview-info">
+                <h2 id="previewName"></h2>
+                <div class="price" id="previewPrice"></div>
+                <button class="whatsapp-btn" onclick="sendWhatsApp()">Contactar por WhatsApp</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Modal de Login Admin -->
+    <div id="loginModal" class="modal">
+        <div class="modal-content">
+            <span class="close" onclick="closeModal('loginModal')">&times;</span>
+            <h2>🔐 Iniciar Sesión</h2>
+            <div class="form-group">
+                <label>Contraseña:</label>
+                <input type="password" id="adminPassword" placeholder="Ingresa la contraseña" onkeypress="if(event.key==='Enter') loginAdmin()">
+            </div>
+            <button class="btn-primary" onclick="loginAdmin()">Ingresar</button>
+        </div>
+    </div>
+
+    <!-- Modal de Admin Panel -->
+    <div id="adminModal" class="modal">
+        <div class="modal-content">
+            <span class="close" onclick="closeModal('adminModal')">&times;</span>
+            <h2>⚙️ Panel de Administración</h2>
+            <h3 style="margin-top: 20px; color: #b8860b;">Agregar Nuevo Producto</h3>
+            <div class="form-group">
+                <label>Nombre del Reloj:</label>
+                <input type="text" id="productName" placeholder="Ej: Casio Original">
+            </div>
+            <div class="form-group">
+                <label>Precio (RD$):</label>
+                <input type="number" id="productPrice" placeholder="Ej: 25000">
+            </div>
+            <div class="form-group">
+                <label>Imagen del Reloj:</label>
+                <input type="file" id="productImage" accept="image/*">
+            </div>
+            <button class="btn-primary" onclick="addProduct()" id="addProductBtn">Agregar Producto</button>
+
+            <div class="admin-products">
+                <h3 style="color: #b8860b;">📦 Productos Existentes</h3>
+                <div id="adminProductsList"></div>
+            </div>
+            <button class="btn-primary" style="margin-top: 20px; background: linear-gradient(135deg, #e74c3c, #c0392b);" onclick="logoutAdmin()">🚪 Cerrar Sesión</button>
+        </div>
+    </div>
+
+    <script>
+        // ==========================================
+        // CONFIGURACIÓN (Ya con tu clave real)
+        // ==========================================
+        const SUPABASE_URL = 'https://qqyeiukdwqbacyxblxoq.supabase.co';
+        const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InFxeWVpdWtkd3FiYWN5eGJseG9xIiwicm9sZSI6ImFub24iLCJpYXQiOjE3OTA2MTQwNTQsImV4cCI6MjEwNjE5MDA1NH0.HRaWzN71L4QLyUpKxF2tykvYAScEs5NDx6r57BnlcjI';
+        const SUPABASE_BUCKET = 'relojes';
+        const WHATSAPP_NUMBER = '18495645495';
+        const ADMIN_PASSWORD = 'admin123';
+
+        // Inicializar Supabase
+        const supabaseClient = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+        
+        let isAdminLoggedIn = false;
+        let products = [];
+        let selectedProduct = null;
+
+        // Funciones de Login (Blindadas)
+        function openAdminLogin() {
+            if (isAdminLoggedIn) {
+                openAdminPanel();
+            } else {
+                document.getElementById('loginModal').style.display = 'block';
+            }
+        }
+
+        function loginAdmin() {
+            const passwordInput = document.getElementById('adminPassword');
+            if (!passwordInput) {
+                alert('Error: No se encontró el campo de contraseña');
+                return;
+            }
+            
+            if (passwordInput.value === ADMIN_PASSWORD) {
+                isAdminLoggedIn = true;
+                closeModal('loginModal');
+                passwordInput.value = ''; // Limpiar campo
+                openAdminPanel();
+            } else {
+                alert('❌ Contraseña incorrecta. Intenta con: admin123');
+            }
+        }
+
+        function openAdminPanel() {
+            document.getElementById('adminModal').style.display = 'block';
+            renderAdminProducts();
+        }
+
+        function closeModal(modalId) {
+            const modal = document.getElementById(modalId);
+            if (modal) modal.style.display = 'none';
+        }
+
+        function logoutAdmin() {
+            isAdminLoggedIn = false;
+            closeModal('adminModal');
+            alert('👋 Sesión cerrada');
+        }
+
+        // Cargar productos
+        async function loadProducts() {
+            try {
+                const { data, error } = await supabaseClient
+                    .from('products')
+                    .select('*')
+                    .order('created_at', { ascending: false });
+
+                if (error) throw error;
+                products = data || [];
+                
+                document.getElementById('loadingMessage').style.display = 'none';
+                renderProducts();
+            } catch (error) {
+                console.error('Error cargando productos:', error);
+                document.getElementById('loadingMessage').innerHTML = '⚠️ No se pudieron cargar los productos. Verifica la configuración de Supabase (F12 para detalles).';
+            }
+        }
+
+        function renderProducts() {
+            const container = document.getElementById('productsContainer');
+            const noProducts = document.getElementById('noProducts');
+            
+            if (products.length === 0) {
+                container.style.display = 'none';
+                noProducts.style.display = 'block';
+                return;
+            }
+
+            container.style.display = 'grid';
+            noProducts.style.display = 'none';
+            
+            container.innerHTML = products.map((product, index) => `
+                <div class="product-card">
+                    <div class="product-image-container">
+                        <img src="${product.image_url}" alt="${product.name}" class="product-image" onclick="openPreview(${index})">
+                        <div class="zoom-hint">🔍 Zoom</div>
+                    </div>
+                    <div class="product-info">
+                        <div class="product-name">${product.name}</div>
+                        <div class="product-price">RD$ ${parseFloat(product.price).toLocaleString()}</div>
+                        <button class="whatsapp-btn" onclick="openPreview(${index})">Me interesa</button>
+                    </div>
+                </div>
+            `).join('');
+        }
+
+        function openPreview(index) {
+            selectedProduct = products[index];
+            document.getElementById('previewImage').src = selectedProduct.image_url;
+            document.getElementById('previewName').textContent = selectedProduct.name;
+            document.getElementById('previewPrice').textContent = 'RD$ ' + parseFloat(selectedProduct.price).toLocaleString();
+            document.getElementById('previewModal').style.display = 'block';
+        }
+
+        function sendWhatsApp() {
+            if (!selectedProduct) return;
+            const message = `¡Hola OC. RELOJES.RD! 👋\n\n*Me interesa este reloj:*\n📌 *Modelo:* ${selectedProduct.name}\n💰 *Precio:* RD$ ${parseFloat(selectedProduct.price).toLocaleString()}\n\nPor favor, indíquenme disponibilidad.`;
+            window.open(`https://wa.me/${WHATSAPP_NUMBER}?text=${encodeURIComponent(message)}`, '_blank');
+            closeModal('previewModal');
+        }
+
+        async function addProduct() {
+            const name = document.getElementById('productName').value;
+            const price = document.getElementById('productPrice').value;
+            const imageFile = document.getElementById('productImage').files[0];
+
+            if (!name || !price || !imageFile) {
+                alert('⚠️ Por favor completa todos los campos');
+                return;
+            }
+
+            const btn = document.getElementById('addProductBtn');
+            btn.disabled = true;
+            btn.textContent = '⏳ Subiendo...';
+
+            try {
+                const fileExt = imageFile.name.split('.').pop();
+                const fileName = `${Date.now()}.${fileExt}`;
+
+                // 1. Subir imagen
+                const { error: uploadError } = await supabaseClient.storage.from(SUPABASE_BUCKET).upload(fileName, imageFile);
+                if (uploadError) throw uploadError;
+
+                // 2. Obtener URL
+                const { data: { publicUrl } } = supabaseClient.storage.from(SUPABASE_BUCKET).getPublicUrl(fileName);
+
+                // 3. Guardar en BD
+                const { error: dbError } = await supabaseClient.from('products').insert([{ name, price: parseFloat(price), image_url: publicUrl }]);
+                if (dbError) throw dbError;
+
+                await loadProducts();
+                renderAdminProducts();
+                
+                document.getElementById('productName').value = '';
+                document.getElementById('productPrice').value = '';
+                document.getElementById('productImage').value = '';
+                alert('✅ Producto agregado exitosamente');
+            } catch (error) {
+                console.error('Error:', error);
+                alert('❌ Error: ' + error.message);
+            } finally {
+                btn.disabled = false;
+                btn.textContent = 'Agregar Producto';
+            }
+        }
+
+        function renderAdminProducts() {
+            const container = document.getElementById('adminProductsList');
+            if (products.length === 0) {
+                container.innerHTML = '<p style="text-align: center; color: #999;">No hay productos aún</p>';
+                return;
+            }
+            container.innerHTML = products.map((product, index) => `
+                <div class="admin-product-item">
+                    <img src="${product.image_url}" alt="${product.name}">
+                    <div class="admin-product-info">
+                        <strong>${product.name}</strong><br>
+                        <input type="number" value="${product.price}" onchange="updatePrice(${index}, this.value)" style="width: 120px; padding: 5px; margin-top: 5px;">
+                    </div>
+                    <button class="btn-delete" onclick="deleteProduct(${index})">🗑️</button>
+                </div>
+            `).join('');
+        }
+
+        async function updatePrice(index, newPrice) {
+            try {
+                await supabaseClient.from('products').update({ price: parseFloat(newPrice) }).eq('id', products[index].id);
+                await loadProducts();
+                renderAdminProducts();
+            } catch (error) {
+                alert('❌ Error al actualizar');
+            }
+        }
+
+        async function deleteProduct(index) {
+            if (!confirm('¿Eliminar este producto?')) return;
+            try {
+                const imagePath = products[index].image_url.split('/').pop();
+                await supabaseClient.storage.from(SUPABASE_BUCKET).remove([imagePath]);
+                await supabaseClient.from('products').delete().eq('id', products[index].id);
+                await loadProducts();
+                renderAdminProducts();
+                alert('✅ Producto eliminado');
+            } catch (error) {
+                alert('❌ Error al eliminar');
+            }
+        }
+
+        // Cerrar modales al hacer clic fuera
+        window.onclick = function(event) {
+            if (event.target.classList.contains('modal') || event.target.classList.contains('preview-modal')) {
+                event.target.style.display = 'none';
+            }
+        }
+
+        // Iniciar
+        document.addEventListener('DOMContentLoaded', loadProducts);
+    </script>
+</body>
+</html>
